@@ -30,22 +30,38 @@ Time limit: 40 seconds.
 #include <iostream>
 using namespace std;
 
-int solve(int m, int n, int p, int ** scoreboard){
+int solve(){
 
-    int * participant = scoreboard[p];
+    int m, n, p = 0;
+        cin >> m;
+        cin >> n;
+        cin >> p; 
 
-    int maxDiff, totalDiff = 0;
+        int ** scoreboard = new int * [m];
+        int score, totalDiff = 0;
+        int * mostSteps = new int[n];  // the most steps for Si day 
+         
+        //initalize mostSteps to 0
+        for(int i = 0; i < n; i++){mostSteps[i] = 0;}
 
-    for(int i = 0; i < n; i++){// day ->scoreboard[][y]
-        maxDiff = 0;
-        for(int j = 0; j < m; j++){ // id -> scoreboard[x][]
-            if((participant[i] > scoreboard[j][i]) && (participant[i] - scoreboard[j][i] > maxDiff)){
-                maxDiff = participant[i] - scoreboard[j][i];
+
+        for(int j = 0; j < m; j++){
+            scoreboard[j] = new int[n];
+            for(int k = 0; k < n; k++){
+                cin >> scoreboard[j][k];
+                if(scoreboard[j][k] > mostSteps[k]){
+                    mostSteps[k] = scoreboard[j][k];
+                }
+            }  
+        }
+
+        int *participant = scoreboard[p-1];
+        //Compare the maxSteps with participant P
+        for(int i = 0; i < n; i++){
+            if(mostSteps[i] > participant[i]){
+                totalDiff += (mostSteps[i] - participant[i]);
             }
         }
-        totalDiff += maxDiff;
-    }
-
 
     return totalDiff;
 }
@@ -54,24 +70,8 @@ int main(){
     int cases = 0;
     cin >> cases;
     for(int i = 0; i < cases; i++){
-        int m, n, p = 0;
-        cin >> m;
-        cin >> n;
-        cin >> p; 
-
-        int ** scoreboard = new int * [m];
-
-        for(int j = 0; j < m; j++){
-            int score = 0;
-            scoreboard[j] = new int[n];
-            for(int k = 0; k < n; k++){
-                cin >> scoreboard[j][k];
-                // cout << "scoreboard[" << j << "][" << k << "]: " << scoreboard[j][k] << "___";
-            }  
-            // cout << endl;
-        }
-
-        cout << "Case #" << i+1 << ": " << solve(m, n, p, scoreboard) << endl;
+        
+        cout << "Case #" << i+1 << ": " << solve() << endl;
 
     }
 
