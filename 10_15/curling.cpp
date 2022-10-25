@@ -55,30 +55,24 @@ using namespace std;
 //Node object for LinkedList
 class Node{
     public:
-    int x;
-    int y;
     char color;
     float distance;
     Node * next;
 
     Node(){
-        x: 0;
-        y: 0;
         color: '.';
         distance: 0; 
         next: NULL;
     }
 
-    Node(int x, int y, char color, float distance){
-        this->x = x;
-        this->y = y;
+    Node(char color, float distance){
         this->color = color;
         this->distance = distance;  
         this-> next = NULL;
     }
 };
 
-// LinkedList object to save the 
+// LinkedList object to save the coordinates of each disk
 class LinkedList {
     
     Node * head;
@@ -88,23 +82,52 @@ class LinkedList {
     //LinkedList constructor
     LinkedList() { head = NULL; }
 
-    void insertNode(int x, int y, char color, float distance){
+    void insertNode(char color, float distance){
 
-        Node* node = new Node(x,y,color, distance);
+        Node* node = new Node(color, distance);
 
         if(head == NULL){
+            //List is empty. The new node is now the head;
             head = node;
         }         
 
         else{
+            //Insert Sort it in
             Node * temp = head;
+
+            if(distance < temp->distance){
+                //If the value is less than the head value, make the new node the head node and point the pointers accoringly
+                head = node;
+                head -> next = temp;
+                return;
+            }
+
+            if((temp->next == NULL) && (distance > temp->distance)){
+                // if we're at the tail and distance is greater than temp-> distance
+                temp->next = node;
+                return;
+            }
+
+            Node * prev = head;
             while(temp->next != NULL){
                 temp = temp -> next;
-            }
-            temp -> next = node;
+                if(distance > temp->distance){
+                    if(temp-> next == NULL){
+                        //This is the tail
+                        temp-> next = node;
+                        break;
+                    }    
+                    else{
+                        prev = temp;
+                    }
+                }
+                else if(distance > prev-> distance && distance < temp -> distance){
+                    prev -> next = node;
+                    node-> next = temp;
+                    return;
+                }
+            }            
         }
-
-        cout << "Node added" << endl;
     }  
 
     void printList(){
@@ -114,13 +137,12 @@ class LinkedList {
             cout << "Empty" << endl;
             return;
         }
-        while(temp->next != NULL){
-            cout << "(" << temp->x << ", " << temp->y <<  "), distance: " << temp->distance;
+        while(temp != NULL){
             if(temp ->color == 'r'){
-                cout << "; color: RED" << endl;
+                cout << "RED -> " << "distance: " << temp->distance << endl;
             }
             else if(temp ->color == 'y'){
-                cout << "; color: Yellow" << endl;
+                cout << "Yellow -> " << "distance: " << temp->distance << endl;
             }
             else{
                 cout << endl;
@@ -129,51 +151,57 @@ class LinkedList {
         }
     }
 
+    Node * getHead(){
+        return head;
+    }
+
 
 };
-
-bool outBound(int x, int Rs, int Rh){
-    
-    // cout << "x-y: " << x << ", Rs: " << Rs << ", Rh: " << Rh << endl;
-    
-    if( x <  0){
-        if( ( x + Rs) < - Rh){ 
-            return true;
-        }
-    } 
-    
-    else if(x > 0){ 
-        if( (x - Rs) > Rh){
-            return true;
-        }  
-    }
-    
-    return false;
-}
 
 float calcDistance(int x, int y, int Rs){
+    // This calculates the distance of the closest point of a disk to (0,0)
     float midPoint = sqrt( (x * x) + (y * y));
-    return (midPoint > Rs) ? midPoint-Rs: midPoint;
+    return (midPoint >= Rs) ? midPoint-Rs: midPoint;
 };
 
-void calculateScores(LinkedList disks, int redScore, int yellowScore, int N){
+void calculateScores(LinkedList disks, int * scores){
+    // This will check the ordered linked list and stop once the list ends 
+        //or we find a different color than the color of the first disk
+    
+    //Counter variables
+    int redScore = 0;
+    int yellowScore = 0;
 
+    Node * temp = disks.getHead();
+    if(temp == NULL){
+        // cout  << "List is empty" << endl;
+        return;
+    }
+
+    char color = temp->color;
+    // cout << "Closest color: " << color << endl;
+    
+    while((temp != NULL) && (temp->color == color)){
+        (color == 'r')? redScore ++ : yellowScore++;
+        temp = temp -> next;
+    }
+
+    *scores = redScore;
+    *(scores + 1) = yellowScore;
+
+    // cout << "Reds: "<< *scores << "; Yellows: " << *(scores + 1) << endl;
 }
 
-void solve(int scores []){
+void solve(int * scores){
 
     int Rs, Rh = 0;
     //Set Rs and Rh values
     cin >> Rs;
     cin >> Rh;
-    // cout << "Rs: " << Rs << ", Rh: " << Rh << endl;
+ 
     //Initialize the Red team's Disks in house
     int N = 0;
     cin >> N;
-
-
-    int inBoundNum = 0;
-
 
     LinkedList inBoundDisks;
 
@@ -182,12 +210,10 @@ void solve(int scores []){
         int x, y = 0;
         cin >> x;
         cin >> y;
-        if(outBound(x, Rs, Rh)){continue;}
-        if(outBound(y, Rs, Rh)){continue;}
         float distance = calcDistance(x, y, Rs);
-        inBoundDisks.insertNode(x, y,'r', distance);
-        inBoundNum++;
-        
+        if(distance <=  Rh){
+            inBoundDisks.insertNode('r', distance);
+        }
     }
 
     //Initialize the Yellow team's Disks in house
@@ -195,28 +221,23 @@ void solve(int scores []){
     int M = 0;
     cin >> M;
 
-   LinkedList yellowDisks;
+//    LinkedList yellowDisks;
 
     for(int i = 0; i < M; i++){
         int x, y = 0;
         cin >> x;
         cin >> y;
-        if(outBound(x, Rs, Rh)){continue;}
-        if(outBound(y, Rs, Rh)){continue;}
         float distance = calcDistance(x, y, Rs);
-        inBoundDisks.insertNode(x, y, 'y', distance);
-        inBoundNum++;
+        if(distance <= Rh){
+            inBoundDisks.insertNode('y', distance);
+        }
     }
 
-    inBoundDisks.printList();
+    // inBoundDisks.printList(); 
 
     //Calculate scores
-    int redScore, yellowScore = 0;
-    calculateScores(inBoundDisks, redScore, yellowScore, inBoundNum); 
+    calculateScores(inBoundDisks, scores); 
 
-    //Set the scores
-    scores[0] = redScore;
-    scores[1] = yellowScore;
 }
 
 int main(){
@@ -225,9 +246,9 @@ int main(){
     cin >> cases;
     for(int i = 0; i < cases; i++){
         //Allocate memory for the scores
-        int scores [2] = {0,0};
+        int scores[2] = {0, 0};
         solve(scores);
-        cout << "Case #" << i+1 << ": " << scores[0] << ", " << scores[1] << endl;
+        cout << "Case #" << i+1 << ": " << scores[0] << " " << scores[1] << endl;
 
     }
 
